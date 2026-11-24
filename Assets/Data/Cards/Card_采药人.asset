@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1b2c3d4e5f601010000000000000003, type: 3}
+  m_Name: "Card_\u91C7\u836F\u4EBA"
+  m_EditorClassIdentifier: Assembly-CSharp::XHHY.Game.Data.CardData
+  cardId: card_caiyaoren
+  title: "\u91C7\u836F\u4EBA"
+  description: "\u64C5\u957F\u91C7\u836F\u7684\u4EBA\u7269\u5361\u3002"
+  icon: {fileID: 0}
+  cardType: {fileID: 11400000, guid: 9b84c2c79551ea647b318579cd119d59, type: 2}
+  skillPoints: 2
+  elementMetal: 0
+  elementWood: 2
+  elementWater: 0
+  elementFire: 0
+  elementEarth: 0

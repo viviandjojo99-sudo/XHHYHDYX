@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="512" height="512">
+  <!-- Pin outline -->
+  <path fill="#000000" fill-rule="evenodd" d="
+    M50 9.5
+    C27.8 9.5 11.5 26.2 11.5 48
+    C11.5 61.2 20.2 72.8 34.2 85
+    L47.1 96.4
+    C48.6 97.7 51.4 97.7 52.9 96.4
+    L65.8 85
+    C79.8 72.8 88.5 61.2 88.5 48
+    C88.5 26.2 72.2 9.5 50 9.5
+    Z
+    M50 18.5
+    C67 18.5 79.5 31.8 79.5 48
+    C79.5 58.2 73 67.5 62.8 77
+    L50 89
+    L37.2 77
+    C27 67.5 20.5 58.2 20.5 48
+    C20.5 31.8 33 18.5 50 18.5
+    Z
+  "/>
+  <!-- House: top beam -->
+  <rect fill="#000000" x="24.5" y="51" width="47" height="5.8"/>
+  <!-- House: left wall -->
+  <rect fill="#000000" x="24.5" y="51" width="6" height="32"/>
+  <!-- House: right wall -->
+  <rect fill="#000000" x="65.5" y="56.8" width="6" height="28.7"/>
+  <!-- House: roof + walls + door hole -->
+  <path fill="#000000" fill-rule="evenodd" d="
+    M35.5 70.5
+    L49.5 54.5
+    L63.5 70.5
+    L63.5 84
+    L35.5 84
+    Z
+    M43.5 72.5
+    H55.5
+    V84
+    H43.5
+    Z
+  "/>
+</svg>

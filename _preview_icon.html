@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <title>Icon SVG Preview</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #c8c8c8; margin: 0; padding: 24px; }
+    h2 { margin: 0 0 16px; font-size: 18px; }
+    .row { display: flex; flex-wrap: wrap; gap: 20px; }
+    .card { background: #fff; padding: 16px; border-radius: 10px; text-align: center; }
+    .card.dark { background: #222; color: #fff; }
+    .card h3 { margin: 0 0 12px; font-size: 13px; font-weight: 600; }
+    img, object { width: 240px; height: 240px; display: block; }
+    .card svg { width: 240px; height: 240px; display: block; }
+  </style>
+</head>
+<body>
+  <h2>原图 vs 矢量 SVG</h2>
+  <div class="row">
+    <div class="card">
+      <h3>原 PNG (放大)</h3>
+      <img src="_src_icon.png" width="240" height="240" alt="original" style="image-rendering: pixelated;" />
+    </div>
+    <div class="card">
+      <h3>几何矢量 SVG · 白底</h3>
+      <object data="PositionIcon_House.svg" type="image/svg+xml" width="240" height="240"></object>
+    </div>
+    <div class="card dark">
+      <h3>几何矢量 SVG · 深底</h3>
+      <object data="PositionIcon_House.svg" type="image/svg+xml" width="240" height="240"></object>
+    </div>
+    <div class="card">
+      <h3>像素描边 SVG</h3>
+      <object data="PositionIcon_House_traced.svg" type="image/svg+xml" width="240" height="240"></object>
+    </div>
+  </div>
+</body>
+</html>

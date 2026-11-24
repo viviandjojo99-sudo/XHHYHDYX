@@ -1,0 +1,29 @@
+---
+description: Alchemy card narrative game constraints and phase gates
+alwaysApply: true
+---
+
+# Alchemy card narrative game
+
+Unity 6, UGUI, TextMeshPro, New Input System. Narrative card game, not combat.
+
+- Edit the existing scene, prefabs, and scripts. Do not build a second UI.
+- Never change Canvas scale.
+- Type names: EventPanel, HandTray, CardSlot, EventData. Never Rite, HandCardsController, SimpleDragable.
+- Content lives in ScriptableObjects. No hardcoded copy, cards, slots, or requirements.
+- Compare card types by typeId, never by display name.
+- UI hit tests use EventSystem.RaycastAll, never IsPointerOverGameObject.
+- Event text is locked: open shows opening text only; after a card is placed, opening text plus one outcome preview. No scrolling log on the event page.
+- Work only on the named phase. Do not pull in later phases.
+- If a requirement is ambiguous, ask before creating a new script.
+- Prefer editing existing files. Touch about three files per task unless the task names more.
+
+Phase order, one at a time, tag before the next:
+
+1. Hand layout, then map-vs-UI input, then verify the current event loop.
+2. Deck vs hand split.
+3. Confirm runs settlements. Cancel changes nothing.
+4. Switches, triggers, common events.
+5. Inspector tooling only after phase 4 works from assets.
+
+Alchemy brewing is a later event asset (recipe, herbs, tool, character), not a new system before phase 3. Tags and a card-id validator are data-foundation work, not part of hand layout.

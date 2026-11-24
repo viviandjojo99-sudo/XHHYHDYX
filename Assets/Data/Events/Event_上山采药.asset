@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1b2c3d4e5f601010000000000000005, type: 3}
+  m_Name: "Event_\u4E0A\u5C71\u91C7\u836F"
+  m_EditorClassIdentifier: Assembly-CSharp::XHHY.Game.Data.EventData
+  eventId: event_shangshan_caiyao
+  title: "\u4E0A\u5C71\u91C7\u836F"
+  background: {fileID: 0}
+  openingText: "\u5C71\u8DEF\u8FB9\u6709\u4E00\u4E1B\u836F\u8349\u3002\u9700\u8981\u5408\u9002\u7684\u4EBA\u6765\u91C7\uFF0C\u4E5F\u53EF\u4EE5\u5E26\u4E0A\u5DE5\u5177\u3002"
+  previewOutcomeText: "\u82E5\u5C5E\u6027\u8DB3\u591F\uFF0C\u4F60\u5C06\u91C7\u5F97\u8349\u836F\u4E0E\u79CD\u5B50\uFF1B\u4E0D\u8DB3\u5219\u53EF\u80FD\u7A7A\u624B\u800C\u5F52\uFF0C\u751A\u81F3\u53D7\u4F24\u3002"
+  requiredAttributes:
+    metal: 0
+    wood: 2
+    water: 0
+    fire: 0
+    earth: 1
+  slots:
+  - slotId: slot_person
+    acceptType: {fileID: 11400000, guid: 9b84c2c79551ea647b318579cd119d59, type: 2}
+    anchoredPosition: {x: -200, y: 0}
+    required: 1
+  - slotId: slot_tool
+    acceptType: {fileID: 11400000, guid: b6dbcd90768ad4147a654f5f9cb2d087, type: 2}
+    anchoredPosition: {x: 0, y: 0}
+    required: 0
