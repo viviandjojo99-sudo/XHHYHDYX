@@ -12,12 +12,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a1b2c3d4e5f601010000000000000003, type: 3}
   m_Name: "Card_\u94C1\u94F2"
   m_EditorClassIdentifier: Assembly-CSharp::XHHY.Game.Data.CardData
-  cardId: card_tieshan
+  cardId: gongju.tieshan
   title: "\u94C1\u94F2"
-  description: "\u6316\u6398\u7528\u5DE5\u5177\u3002"
+  description: "\u6316\u6398\u7528\u5DE5\u5177\uFF0C\u53EF\u88C5\u5907\u3002"
   icon: {fileID: 0}
   cardType: {fileID: 11400000, guid: b6dbcd90768ad4147a654f5f9cb2d087, type: 2}
+  attributes:
+  - attributeId: metal
+    value: 1
+  - attributeId: earth
+    value: 1
+  stackable: 0
+  maxStack: 99
+  tags: []
   skillPoints: 0
+  equipSlots: []
+  onEat: []
+  eatDurationRounds: 0
+  equipModifiers:
+  - attributeId: earth
+    value: 1
+  equipSlotId: weapon
+  recipe:
+    bands: []
+    requiredHerbTypeIds: []
+    highOutput: {fileID: 0}
+    midOutput: {fileID: 0}
+    failOutput: {fileID: 0}
+    explodeAttributeId: fire
   elementMetal: 0
   elementWood: 0
   elementWater: 0

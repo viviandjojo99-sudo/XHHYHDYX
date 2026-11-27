@@ -8,6 +8,7 @@ using UnityEngine.UI;
 using XHHY.Game;
 using XHHY.Game.Data;
 using XHHY.Game.Map;
+using XHHY.Game.Motion;
 using XHHY.Game.UI;
 
 namespace XHHY.Game.EditorTools
@@ -53,9 +54,80 @@ namespace XHHY.Game.EditorTools
 
             var name = root.transform.Find("CardNameFrame/CardName")?.GetComponent<TMP_Text>();
             var icon = root.transform.Find("CardIcon")?.GetComponent<Image>();
+
+            // 数量角标
+            var countTf = root.transform.Find("CountBadge");
+            if (countTf == null)
+            {
+                var countGo = new GameObject("CountBadge", typeof(RectTransform), typeof(TextMeshProUGUI));
+                countGo.transform.SetParent(root.transform, false);
+                var crt = countGo.GetComponent<RectTransform>();
+                crt.anchorMin = new Vector2(1f, 1f);
+                crt.anchorMax = new Vector2(1f, 1f);
+                crt.pivot = new Vector2(1f, 1f);
+                crt.anchoredPosition = new Vector2(-8f, -8f);
+                crt.sizeDelta = new Vector2(48f, 28f);
+                var ctmp = countGo.GetComponent<TextMeshProUGUI>();
+                ctmp.fontSize = 20;
+                ctmp.alignment = TextAlignmentOptions.TopRight;
+                ctmp.color = Color.white;
+                countGo.SetActive(false);
+                countTf = countGo.transform;
+            }
+
+            // 属性小块行
+            var attrTf = root.transform.Find("AttrRow");
+            if (attrTf == null)
+            {
+                var rowGo = new GameObject("AttrRow", typeof(RectTransform), typeof(HorizontalLayoutGroup));
+                rowGo.transform.SetParent(root.transform, false);
+                var rrt = rowGo.GetComponent<RectTransform>();
+                rrt.anchorMin = new Vector2(0f, 0f);
+                rrt.anchorMax = new Vector2(1f, 0f);
+                rrt.pivot = new Vector2(0.5f, 0f);
+                rrt.anchoredPosition = new Vector2(0f, 8f);
+                rrt.sizeDelta = new Vector2(-12f, 28f);
+                var h = rowGo.GetComponent<HorizontalLayoutGroup>();
+                h.childAlignment = TextAnchor.MiddleCenter;
+                h.spacing = 4f;
+                h.childForceExpandWidth = false;
+                h.childForceExpandHeight = false;
+                for (int i = 0; i < 4; i++)
+                {
+                    var chip = new GameObject("Chip" + i, typeof(RectTransform), typeof(Image), typeof(TextMeshProUGUI));
+                    chip.transform.SetParent(rowGo.transform, false);
+                    var chipRt = chip.GetComponent<RectTransform>();
+                    chipRt.sizeDelta = new Vector2(36f, 24f);
+                    var img = chip.GetComponent<Image>();
+                    img.color = new Color(0f, 0f, 0f, 0.35f);
+                    img.raycastTarget = false;
+                    var tmp = chip.GetComponent<TextMeshProUGUI>();
+                    tmp.fontSize = 14;
+                    tmp.alignment = TextAlignmentOptions.Center;
+                    tmp.color = Color.white;
+                    tmp.raycastTarget = false;
+                }
+                attrTf = rowGo.transform;
+            }
+
+            var typeIconTf = root.transform.Find("TypeIcon")?.GetComponent<Image>();
+            var equipDotTf = root.transform.Find("EquipDot")?.GetComponent<Image>();
+
             var so = new SerializedObject(view);
             so.FindProperty("nameText").objectReferenceValue = name;
             so.FindProperty("iconImage").objectReferenceValue = icon;
+            var countProp = so.FindProperty("countText");
+            if (countProp != null)
+                countProp.objectReferenceValue = countTf.GetComponent<TMP_Text>();
+            var attrProp = so.FindProperty("attributeRow");
+            if (attrProp != null)
+                attrProp.objectReferenceValue = attrTf as RectTransform;
+            var typeProp = so.FindProperty("typeIcon");
+            if (typeProp != null)
+                typeProp.objectReferenceValue = typeIconTf;
+            var equipProp = so.FindProperty("equipDot");
+            if (equipProp != null)
+                equipProp.objectReferenceValue = equipDotTf;
             so.ApplyModifiedPropertiesWithoutUndo();
             PrefabUtility.SaveAsPrefabAsset(root, CardPrefabPath);
             PrefabUtility.UnloadPrefabContents(root);
@@ -100,7 +172,7 @@ namespace XHHY.Game.EditorTools
             var slotPrefab = AssetDatabase.LoadAssetAtPath<EventCardSlot>(CardSlotPrefabPath);
             var tagPrefab = AssetDatabase.LoadAssetAtPath<HandCardTagItem>(HandCardTypePrefabPath);
             var deck = AssetDatabase.LoadAssetAtPath<HandDeckConfig>(DeckPath);
-            var catalog = AssetDatabase.LoadAssetAtPath<CardTypeCatalog>(CatalogPath);
+            var typeCatalog = AssetDatabase.LoadAssetAtPath<CardTypeCatalog>(CatalogPath);
             var sampleEvent = AssetDatabase.LoadAssetAtPath<EventData>(EventAssetPath);
 
             // HandTray
@@ -109,10 +181,18 @@ namespace XHHY.Game.EditorTools
             handTraySo.FindProperty("handCardContainer").objectReferenceValue = handCardGo.transform;
             handTraySo.FindProperty("cardPrefab").objectReferenceValue = cardPrefab;
             handTraySo.FindProperty("deckConfig").objectReferenceValue = deck;
-            var preferred = handTraySo.FindProperty("preferredSpacing");
-            if (preferred != null) preferred.floatValue = 148f;
-            var minSp = handTraySo.FindProperty("minSpacing");
-            if (minSp != null) minSp.floatValue = 36f;
+            var layout = AssetDatabase.LoadAssetAtPath<HandLayoutSettings>("Assets/Data/HandLayoutSettings.asset");
+            var layoutProp = handTraySo.FindProperty("layoutSettings");
+            if (layoutProp != null)
+                layoutProp.objectReferenceValue = layout;
+            var motion = AssetDatabase.LoadAssetAtPath<MotionSettings>("Assets/Data/MotionSettings.asset");
+            var motionProp = handTraySo.FindProperty("motionSettings");
+            if (motionProp != null)
+                motionProp.objectReferenceValue = motion;
+            var sfx = AssetDatabase.LoadAssetAtPath<UiSfx>("Assets/Data/UiSfx.asset");
+            var sfxProp = handTraySo.FindProperty("uiSfx");
+            if (sfxProp != null)
+                sfxProp.objectReferenceValue = sfx;
             handTraySo.ApplyModifiedPropertiesWithoutUndo();
 
             // HandTray / HandCard 必须挡射线，否则点手牌区会拖地图
@@ -137,7 +217,7 @@ namespace XHHY.Game.EditorTools
             // HandCardTag
             var tagBar = handTagGo.GetComponent<HandCardTagBar>() ?? handTagGo.AddComponent<HandCardTagBar>();
             var tagSo = new SerializedObject(tagBar);
-            tagSo.FindProperty("catalog").objectReferenceValue = catalog;
+            tagSo.FindProperty("catalog").objectReferenceValue = typeCatalog;
             tagSo.FindProperty("tagContainer").objectReferenceValue = handTagGo.GetComponent<RectTransform>();
             tagSo.FindProperty("tagItemPrefab").objectReferenceValue = tagPrefab;
             tagSo.FindProperty("handTray").objectReferenceValue = handTray;
@@ -194,7 +274,39 @@ namespace XHHY.Game.EditorTools
 
                 var attrSo = new SerializedObject(attrView);
                 attrSo.FindProperty("summaryText").objectReferenceValue = attrText;
+                var tierProp = attrSo.FindProperty("tierText");
+                if (tierProp != null)
+                    tierProp.objectReferenceValue = attrText;
+                var catalog = AssetDatabase.LoadAssetAtPath<AttributeCatalog>("Assets/Data/Attributes/AttributeCatalog.asset");
+                var catProp = attrSo.FindProperty("catalog");
+                if (catProp != null)
+                    catProp.objectReferenceValue = catalog;
+                var rowPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefab/Attribute.prefab");
+                var rowProp = attrSo.FindProperty("rowPrefab");
+                if (rowProp != null)
+                    rowProp.objectReferenceValue = rowPrefab;
+                var rowContainerProp = attrSo.FindProperty("rowContainer");
+                if (rowContainerProp != null)
+                    rowContainerProp.objectReferenceValue = attributePanel as RectTransform;
+                var motionAttr = AssetDatabase.LoadAssetAtPath<MotionSettings>("Assets/Data/MotionSettings.asset");
+                var motionAttrProp = attrSo.FindProperty("motionSettings");
+                if (motionAttrProp != null)
+                    motionAttrProp.objectReferenceValue = motionAttr;
                 attrSo.ApplyModifiedPropertiesWithoutUndo();
+            }
+
+            // CardInformation 详情面板
+            var cardInfoGo = GameObject.Find("CardInformation");
+            if (cardInfoGo != null)
+            {
+                var info = cardInfoGo.GetComponent<CardInformationPanel>()
+                           ?? cardInfoGo.AddComponent<CardInformationPanel>();
+                var infoSo = new SerializedObject(info);
+                infoSo.FindProperty("root").objectReferenceValue = cardInfoGo;
+                infoSo.FindProperty("handTray").objectReferenceValue = handTray;
+                infoSo.FindProperty("equipSlotPrefab").objectReferenceValue = slotPrefab;
+                infoSo.ApplyModifiedPropertiesWithoutUndo();
+                cardInfoGo.SetActive(false);
             }
 
             Button confirmBtn = null;
@@ -235,6 +347,10 @@ namespace XHHY.Game.EditorTools
             panelSo.FindProperty("confirmButton").objectReferenceValue = confirmBtn;
             panelSo.FindProperty("cancelButton").objectReferenceValue = cancelBtn;
             panelSo.FindProperty("handTray").objectReferenceValue = handTray;
+            var panelMotion = AssetDatabase.LoadAssetAtPath<MotionSettings>("Assets/Data/MotionSettings.asset");
+            var panelMotionProp = panelSo.FindProperty("motionSettings");
+            if (panelMotionProp != null)
+                panelMotionProp.objectReferenceValue = panelMotion;
             panelSo.ApplyModifiedPropertiesWithoutUndo();
 
             // Bootstrap

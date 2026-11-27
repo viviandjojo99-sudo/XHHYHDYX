@@ -52,20 +52,20 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6250095295287681065}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -9105056000286456729, guid: 6bf2b68fb9b977e4bb71df6f93ddc2ad, type: 3}
+  m_Sprite: {fileID: 0}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -166,4 +166,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::XHHY.Game.UI.HandCardTagItem
   type: {fileID: 0}
   iconImage: {fileID: 5711176696694968274}
+  labelFont: {fileID: 11400000, guid: a674b6815939a864c9ab7f3bb107281e, type: 2}
+  labelText: {fileID: 0}
+  countText: {fileID: 0}
+  canvasGroup: {fileID: 0}
   handTray: {fileID: 0}

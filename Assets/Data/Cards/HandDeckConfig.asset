@@ -12,7 +12,41 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a1b2c3d4e5f601010000000000000006, type: 3}
   m_Name: HandDeckConfig
   m_EditorClassIdentifier: Assembly-CSharp::XHHY.Game.Data.HandDeckConfig
-  startingCards:
-  - {fileID: 11400000, guid: 34210524475a8fa4fa1c6f6772357759, type: 2}
-  - {fileID: 11400000, guid: aa8cf5ca68ce12940a8ab86e00f5c896, type: 2}
-  - {fileID: 11400000, guid: 98bc6378e201d6d41a7b0fb2115742b4, type: 2}
+  entries:
+  - card: {fileID: 11400000, guid: 34210524475a8fa4fa1c6f6772357759, type: 2}
+    count: 1
+    initialLocation: 1
+  - card: {fileID: 11400000, guid: aa8cf5ca68ce12940a8ab86e00f5c896, type: 2}
+    count: 3
+    initialLocation: 1
+  - card: {fileID: 11400000, guid: 98bc6378e201d6d41a7b0fb2115742b4, type: 2}
+    count: 1
+    initialLocation: 1
+  - card: {fileID: 11400000, guid: adc4f0e97094c1c43859e2bf92ede38e, type: 2}
+    count: 2
+    initialLocation: 1
+  - card: {fileID: 11400000, guid: ef3949ea74d8f11408b97bb47b75d4f6, type: 2}
+    count: 2
+    initialLocation: 1
+  - card: {fileID: 11400000, guid: 9350fe20ca1ce7540b8360c858787fee, type: 2}
+    count: 1
+    initialLocation: 1
+  - card: {fileID: 11400000, guid: 2930e7a835975464ca3cb08d5e4fd26e, type: 2}
+    count: 1
+    initialLocation: 1
+  - card: {fileID: 11400000, guid: 4511eeee9097b954db32a4a828e2674a, type: 2}
+    count: 1
+    initialLocation: 1
+  - card: {fileID: 11400000, guid: 037632093ec17454d870165d158a7bb6, type: 2}
+    count: 1
+    initialLocation: 1
+  - card: {fileID: 11400000, guid: 0b9e30c10adbec649b410ebfcf867f12, type: 2}
+    count: 1
+    initialLocation: 1
+  - card: {fileID: 11400000, guid: cdd3b0e5b4bb1624c9d340ee239d22fa, type: 2}
+    count: 2
+    initialLocation: 1
+  - card: {fileID: 11400000, guid: e24c642f73edb0448905ba22a64028d7, type: 2}
+    count: 1
+    initialLocation: 0
+  startingCards: []

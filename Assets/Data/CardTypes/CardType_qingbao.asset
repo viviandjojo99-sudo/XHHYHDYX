@@ -14,5 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::XHHY.Game.Data.CardTypeDefinition
   typeId: qingbao
   displayName: "\u60C5\u62A5"
+  groupId: intel
   icon: {fileID: 0}
-  sortOrder: 5
+  sortOrder: 8
+  defaultStackable: 0

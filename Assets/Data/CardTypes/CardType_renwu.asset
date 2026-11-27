@@ -14,5 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::XHHY.Game.Data.CardTypeDefinition
   typeId: renwu
   displayName: "\u4EBA\u7269"
+  groupId: character
   icon: {fileID: 0}
   sortOrder: 0
+  defaultStackable: 0

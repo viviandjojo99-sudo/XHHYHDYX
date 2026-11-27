@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1b2c3d4e5f601010000000000000003, type: 3}
+  m_Name: "Card_\u5C71\u9053\u4F20\u95FB"
+  m_EditorClassIdentifier: Assembly-CSharp::XHHY.Game.Data.CardData
+  cardId: qingbao.shandao
+  title: "\u5C71\u9053\u4F20\u95FB"
+  description: "\u5173\u4E8E\u5C71\u4E0A\u7684\u60C5\u62A5\u3002"
+  icon: {fileID: 0}
+  cardType: {fileID: 11400000, guid: c367f0e6797c51d48b96fba67a111446, type: 2}
+  attributes: []
+  stackable: 0
+  maxStack: 99
+  tags: []
+  skillPoints: 0
+  equipSlots: []
+  onEat: []
+  eatDurationRounds: 0
+  equipModifiers: []
+  equipSlotId: 
+  recipe:
+    bands: []
+    requiredHerbTypeIds: []
+    highOutput: {fileID: 0}
+    midOutput: {fileID: 0}
+    failOutput: {fileID: 0}
+    explodeAttributeId: fire
+  elementMetal: 0
+  elementWood: 0
+  elementWater: 0
+  elementFire: 0
+  elementEarth: 0

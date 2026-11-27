@@ -12,14 +12,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a1b2c3d4e5f601010000000000000003, type: 3}
   m_Name: "Card_\u4E00\u7EA7\u836F\u6750A"
   m_EditorClassIdentifier: Assembly-CSharp::XHHY.Game.Data.CardData
-  cardId: card_herb_1a
+  cardId: yaocai.yi_ji_a
   title: "\u4E00\u7EA7\u836F\u6750A"
   description: "\u5E38\u89C1\u8349\u836F\u3002"
   icon: {fileID: 0}
-  cardType: {fileID: 11400000, guid: 45282280d7f02a145b2b112952a3301f, type: 2}
+  cardType: {fileID: 11400000, guid: 42c9ae1db7d0bfa4cb409ca7ed7980d3, type: 2}
+  attributes:
+  - attributeId: wood
+    value: 2
+  stackable: 1
+  maxStack: 99
+  tags: []
   skillPoints: 0
+  equipSlots: []
+  onEat: []
+  eatDurationRounds: 0
+  equipModifiers: []
+  equipSlotId: 
+  recipe:
+    bands: []
+    requiredHerbTypeIds: []
+    highOutput: {fileID: 0}
+    midOutput: {fileID: 0}
+    failOutput: {fileID: 0}
+    explodeAttributeId: fire
   elementMetal: 0
-  elementWood: 2
+  elementWood: 0
   elementWater: 0
   elementFire: 0
   elementEarth: 0

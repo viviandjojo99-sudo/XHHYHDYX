@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 64447be136dd5284d8d7425658bea0de, type: 3}
+  m_Name: "Common_\u8D3E\u4E3D\u62C9\u5165\u961F\u68C0\u67E5"
+  m_EditorClassIdentifier: Assembly-CSharp::XHHY.Game.Data.CommonEventData
+  commonEventId: common_jialila_join_check
+  title: "\u8D3E\u4E3D\u62C9\u5165\u961F\u68C0\u67E5"
+  trigger: 0
+  triggerFilter: 
+  once: 1
+  conditions:
+  - rid: 3941240676529209503
+  - rid: 3941240676529209504
+  - rid: 3941240676529209505
+  commands:
+  - rid: 3941240676529209506
+  consumed: 0
+  references:
+    version: 2
+    RefIds:
+    - rid: 3941240676529209503
+      type: {class: CondSwitchIs, ns: XHHY.Game.Settlement, asm: Assembly-CSharp}
+      data:
+        switchKey: jialila_corpse_done
+        expected: 1
+    - rid: 3941240676529209504
+      type: {class: CondCardAlive, ns: XHHY.Game.Settlement, asm: Assembly-CSharp}
+      data:
+        cardId: renwu.jialila
+        alive: 1
+    - rid: 3941240676529209505
+      type: {class: CondEventCompleted, ns: XHHY.Game.Settlement, asm: Assembly-CSharp}
+      data:
+        eventId: event_jialila_join
+        completed: 0
+    - rid: 3941240676529209506
+      type: {class: CmdOpenEvent, ns: XHHY.Game.Settlement, asm: Assembly-CSharp}
+      data:
+        eventData: {fileID: 11400000, guid: c06493328f1b7a8489f038c30c3c0156, type: 2}

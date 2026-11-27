@@ -13,6 +13,8 @@ MonoBehaviour:
   m_Name: CardType_peifang
   m_EditorClassIdentifier: Assembly-CSharp::XHHY.Game.Data.CardTypeDefinition
   typeId: peifang
-  displayName: "\u914D\u65B9"
+  displayName: "\u4E39\u65B9"
+  groupId: recipe
   icon: {fileID: 0}
-  sortOrder: 3
+  sortOrder: 6
+  defaultStackable: 0

@@ -3,6 +3,9 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using XHHY.Game.Data;
+using XHHY.Game.Motion;
+using XHHY.Game.Runtime;
+using XHHY.Game.Settlement;
 
 namespace XHHY.Game.UI
 {
@@ -13,6 +16,7 @@ namespace XHHY.Game.UI
         [Header("根与遮罩")]
         [SerializeField] GameObject panelRoot;
         [SerializeField] GameObject dimmer;
+        [SerializeField] CanvasGroup panelCanvasGroup;
 
         [Header("事件内容")]
         [SerializeField] Image eventBg;
@@ -28,10 +32,18 @@ namespace XHHY.Game.UI
 
         [Header("关联")]
         [SerializeField] HandTrayController handTray;
+        [SerializeField] MotionSettings motionSettings;
+        [SerializeField] UiSfx uiSfx;
 
         readonly List<EventCardSlot> _spawnedSlots = new List<EventCardSlot>();
         EventData _current;
         bool _committed;
+        bool _animating;
+        Spring1D _scaleSpring;
+        Spring1D _alphaSpring;
+        float _targetScale = 1f;
+        float _targetAlpha = 1f;
+        RectTransform _panelRt;
 
         public void Wire(
             GameObject root,
@@ -64,6 +76,11 @@ namespace XHHY.Game.UI
             Instance = this;
             if (panelRoot == null)
                 panelRoot = gameObject;
+            _panelRt = panelRoot.transform as RectTransform;
+            if (panelCanvasGroup == null)
+                panelCanvasGroup = panelRoot.GetComponent<CanvasGroup>();
+            if (panelCanvasGroup == null)
+                panelCanvasGroup = panelRoot.AddComponent<CanvasGroup>();
 
             if (confirmButton != null)
             {
@@ -86,16 +103,49 @@ namespace XHHY.Game.UI
                 Instance = null;
         }
 
+        void Update()
+        {
+            if (!_animating || _panelRt == null)
+                return;
+            var motion = motionSettings != null ? motionSettings : MotionSettings.CreateRuntimeDefaults();
+            float dt = Time.unscaledDeltaTime;
+            _scaleSpring.Step(_targetScale, motion.panelOpenStiffness, motion.panelOpenDamping, dt, motion.substeps);
+            _alphaSpring.Step(_targetAlpha, motion.panelOpenStiffness, motion.panelOpenDamping, dt, motion.substeps);
+            float s = Mathf.Clamp(_scaleSpring.value, 0.9f, 1.08f);
+            if (float.IsNaN(s) || float.IsInfinity(s))
+                s = 1f;
+            _panelRt.localScale = new Vector3(s, s, 1f);
+            if (panelCanvasGroup != null)
+                panelCanvasGroup.alpha = Mathf.Clamp01(_alphaSpring.value);
+            if (_targetAlpha <= 0.01f && _alphaSpring.NearlySettled(0f, 0.02f, 0.5f))
+            {
+                _animating = false;
+                if (panelRoot != null)
+                    panelRoot.SetActive(false);
+            }
+            else if (_targetAlpha >= 0.99f && _scaleSpring.NearlySettled(1f))
+            {
+                _animating = false;
+            }
+        }
+
         public void Open(EventData data)
         {
             if (data == null)
                 return;
 
+            if (_committed && _current == data && _spawnedSlots.Count > 0)
+            {
+                ShowShellAnimated();
+                PresentHand();
+                RefreshConfirmButton();
+                return;
+            }
+
             _current = data;
             _committed = false;
-            panelRoot.SetActive(true);
-            if (dimmer != null)
-                dimmer.SetActive(true);
+            ShowShellAnimated();
+            HideCoveringEventFrames();
 
             if (eventBg != null)
                 eventBg.sprite = data.background;
@@ -107,19 +157,62 @@ namespace XHHY.Game.UI
             RebuildSlots(data);
             RefreshAttributesAndPreview();
 
-            // 手牌始终在主界面可用，并提到 Canvas 最前，避免被 Dimmer 挡住
-            if (handTray != null)
-            {
-                handTray.gameObject.SetActive(true);
-                handTray.BringToFront();
-                handTray.ClearTypeFilter();
-                handTray.Relayout();
-            }
+            PresentHand();
+            RefreshConfirmButton();
+            uiSfx?.PlayToggle();
+        }
+
+        void ShowShellAnimated()
+        {
+            if (panelRoot != null)
+                panelRoot.SetActive(true);
+            if (dimmer != null)
+                dimmer.SetActive(true);
+
+            EnsureCanvasGroup();
+            var motion = motionSettings != null ? motionSettings : MotionSettings.CreateRuntimeDefaults();
+            _targetScale = 1f;
+            _targetAlpha = 1f;
+            _scaleSpring.Snap(motion.panelFromScale);
+            _alphaSpring.Snap(1f);
+            if (_panelRt != null)
+                _panelRt.localScale = new Vector3(motion.panelFromScale, motion.panelFromScale, 1f);
+            if (panelCanvasGroup != null)
+                panelCanvasGroup.alpha = 1f;
+            _animating = true;
+        }
+
+        void EnsureCanvasGroup()
+        {
+            if (panelRoot == null)
+                panelRoot = gameObject;
+            if (panelCanvasGroup == null)
+                panelCanvasGroup = panelRoot.GetComponent<CanvasGroup>();
+            if (panelCanvasGroup == null)
+                panelCanvasGroup = panelRoot.AddComponent<CanvasGroup>();
+            _panelRt = panelRoot.transform as RectTransform;
+        }
+
+        void PresentHand()
+        {
+            if (handTray == null)
+                return;
+            handTray.gameObject.SetActive(true);
+            handTray.BringToFront();
+            handTray.ClearTypeFilter();
+            handTray.ApplyTargets(false);
+        }
+
+        void RefreshConfirmButton()
+        {
+            if (confirmButton == null)
+                return;
+            confirmButton.interactable = !_committed && HasAllRequiredSlotsFilled();
         }
 
         public void Confirm()
         {
-            if (_current == null)
+            if (_current == null || _committed)
                 return;
 
             if (!HasAllRequiredSlotsFilled())
@@ -128,14 +221,33 @@ namespace XHHY.Game.UI
                 return;
             }
 
-            // 确认：卡留在槽里，面板关闭，等待后续结算
+            var ctx = BuildContext();
+            var outcome = OutcomeResolver.Resolve(_current, ctx);
+            if (outcome != null)
+            {
+                outcome.Run(ctx);
+                if (!string.IsNullOrEmpty(outcome.resultText))
+                    ResultPopup.Show(outcome.resultText);
+            }
+            else if (!string.IsNullOrEmpty(_current.previewOutcomeText))
+            {
+                ResultPopup.Show(_current.previewOutcomeText);
+            }
+
+            GameState.Ensure().MarkEventCompleted(_current.eventId);
             _committed = true;
             handTray?.ClearTypeFilter();
-            HideImmediate();
+            AnimateHide();
         }
 
         public void Cancel()
         {
+            if (_committed)
+            {
+                AnimateHide();
+                return;
+            }
+
             ReturnAllSlotCardsToHand();
             ClearSlots();
             _current = null;
@@ -143,10 +255,20 @@ namespace XHHY.Game.UI
             narrativeView?.Clear();
             attributeView?.Clear();
             handTray?.ClearTypeFilter();
-            HideImmediate();
+            AnimateHide();
         }
 
         public void Close() => Cancel();
+
+        void AnimateHide()
+        {
+            if (dimmer != null)
+                dimmer.SetActive(false);
+            _targetScale = motionSettings != null ? motionSettings.panelFromScale : 0.96f;
+            _targetAlpha = 0f;
+            _animating = true;
+            handTray?.ClearTypeFilter();
+        }
 
         void HideImmediate()
         {
@@ -154,27 +276,87 @@ namespace XHHY.Game.UI
                 panelRoot.SetActive(false);
             if (dimmer != null)
                 dimmer.SetActive(false);
+            _animating = false;
+        }
+
+        void HideCoveringEventFrames()
+        {
+            if (panelRoot == null || cardSlotPanel == null)
+                return;
+
+            var root = panelRoot.transform;
+            for (int i = 0; i < root.childCount; i++)
+            {
+                var child = root.GetChild(i);
+                if (child == cardSlotPanel || cardSlotPanel.IsChildOf(child))
+                {
+                    child.gameObject.SetActive(true);
+                    continue;
+                }
+
+                if (child.GetComponentInChildren<EventCardSlot>(true) != null)
+                    child.gameObject.SetActive(false);
+            }
         }
 
         void RebuildSlots(EventData data)
         {
             ClearSlots();
-            if (cardSlotPanel == null || cardSlotPrefab == null || data.slots == null)
+            if (cardSlotPanel == null || data == null || data.slots == null)
                 return;
 
+            var existing = new List<EventCardSlot>();
+            for (int i = 0; i < cardSlotPanel.childCount; i++)
+            {
+                var slot = cardSlotPanel.GetChild(i).GetComponent<EventCardSlot>();
+                if (slot != null)
+                    existing.Add(slot);
+            }
+
+            existing.Sort((a, b) =>
+            {
+                float ax = ((RectTransform)a.transform).anchoredPosition.x;
+                float bx = ((RectTransform)b.transform).anchoredPosition.x;
+                return ax.CompareTo(bx);
+            });
+
+            int used = 0;
             for (int i = 0; i < data.slots.Count; i++)
             {
                 var slotData = data.slots[i];
                 if (slotData == null)
                     continue;
 
-                var slot = Instantiate(cardSlotPrefab, cardSlotPanel);
+                EventCardSlot slot;
+                bool move = false;
+                if (used < existing.Count)
+                {
+                    slot = existing[used];
+                }
+                else if (cardSlotPrefab != null)
+                {
+                    slot = Instantiate(cardSlotPrefab, cardSlotPanel);
+                    slot.MarkCreatedAtRuntime();
+                    move = true;
+                }
+                else
+                {
+                    continue;
+                }
+
+                used++;
                 slot.gameObject.SetActive(true);
-                slot.Setup(slotData);
+                slot.Setup(slotData, move);
                 slot.Clicked += OnSlotClicked;
                 slot.CardPlaced += OnCardPlaced;
                 slot.CardRemoved += OnCardRemoved;
                 _spawnedSlots.Add(slot);
+            }
+
+            for (int i = used; i < existing.Count; i++)
+            {
+                if (existing[i] != null)
+                    existing[i].gameObject.SetActive(false);
             }
         }
 
@@ -188,16 +370,13 @@ namespace XHHY.Game.UI
                 slot.Clicked -= OnSlotClicked;
                 slot.CardPlaced -= OnCardPlaced;
                 slot.CardRemoved -= OnCardRemoved;
-                Destroy(slot.gameObject);
+                var card = slot.Clear();
+                card?.ReturnToHand();
+                if (slot.CreatedAtRuntime)
+                    Destroy(slot.gameObject);
             }
 
             _spawnedSlots.Clear();
-
-            if (cardSlotPanel == null)
-                return;
-
-            for (int i = cardSlotPanel.childCount - 1; i >= 0; i--)
-                Destroy(cardSlotPanel.GetChild(i).gameObject);
         }
 
         void ReturnAllSlotCardsToHand()
@@ -228,26 +407,26 @@ namespace XHHY.Game.UI
         {
             if (handTray == null || slot == null || _committed)
                 return;
-            handTray.SetTypeFilter(slot.AcceptType);
+
+            if (slot.Occupant != null)
+                return;
+
+            if (handTray.IsFiltering(slot.SlotData))
+                handTray.ClearTypeFilter();
+            else
+                handTray.SetAcceptFilter(slot.SlotData);
         }
 
-        void OnCardPlaced(EventCardSlot slot, HandCardView card)
-        {
-            RefreshAttributesAndPreview();
-        }
-
-        void OnCardRemoved(EventCardSlot slot, HandCardView card)
-        {
-            RefreshAttributesAndPreview();
-        }
+        void OnCardPlaced(EventCardSlot slot, HandCardView card) => RefreshAttributesAndPreview();
+        void OnCardRemoved(EventCardSlot slot, HandCardView card) => RefreshAttributesAndPreview();
 
         void RefreshAttributesAndPreview()
         {
             if (_current == null)
                 return;
 
-            var provided = SumProvidedAttributes();
-            attributeView?.Show(_current.requiredAttributes, provided);
+            var ctx = BuildContext();
+            attributeView?.Show(_current.ResolveRequirements(), ctx.ProvidedAttributes);
 
             bool anyCard = false;
             for (int i = 0; i < _spawnedSlots.Count; i++)
@@ -259,29 +438,66 @@ namespace XHHY.Game.UI
                 }
             }
 
-            if (anyCard && !string.IsNullOrEmpty(_current.previewOutcomeText))
-                narrativeView?.SetPreviewOutcome(_current.previewOutcomeText);
-            else
-                narrativeView?.ClearPreview();
-        }
-
-        ElementRequirement SumProvidedAttributes()
-        {
-            var sum = new ElementRequirement();
-            for (int i = 0; i < _spawnedSlots.Count; i++)
+            string preview = null;
+            if (anyCard)
             {
-                var occ = _spawnedSlots[i]?.Occupant;
-                var data = occ?.Data;
-                if (data == null)
-                    continue;
-                sum.metal += data.elementMetal;
-                sum.wood += data.elementWood;
-                sum.water += data.elementWater;
-                sum.fire += data.elementFire;
-                sum.earth += data.elementEarth;
+                var outcome = OutcomeResolver.Resolve(_current, ctx);
+                if (outcome != null)
+                {
+                    switch (outcome.previewMode)
+                    {
+                        case PreviewMode.Show:
+                            preview = outcome.previewText;
+                            break;
+                        case PreviewMode.Vague:
+                            preview = "似乎会顺利……";
+                            break;
+                        case PreviewMode.Hidden:
+                            preview = null;
+                            break;
+                    }
+                }
+                if (string.IsNullOrEmpty(preview))
+                    preview = _current.previewOutcomeText;
             }
 
-            return sum;
+            if (!string.IsNullOrEmpty(preview))
+                narrativeView?.SetPreviewOutcome(preview);
+            else
+                narrativeView?.ClearPreview();
+
+            RefreshConfirmButton();
+        }
+
+        SettlementContext BuildContext()
+        {
+            var ctx = new SettlementContext
+            {
+                State = GameState.Ensure(),
+                Event = _current
+            };
+
+            var list = new List<CardInstance>();
+            for (int i = 0; i < _spawnedSlots.Count; i++)
+            {
+                var slot = _spawnedSlots[i];
+                if (slot?.Occupant?.Instance == null && slot?.Occupant?.Data != null)
+                {
+                    // 无 Instance 时临时包装
+                    var temp = CardInstance.Create(slot.Occupant.Data, CardLocation.Slot, 1);
+                    ctx.SlotOccupants[slot.SlotId ?? i.ToString()] = temp;
+                    list.Add(temp);
+                }
+                else if (slot?.Occupant?.Instance != null)
+                {
+                    ctx.SlotOccupants[slot.SlotId ?? i.ToString()] = slot.Occupant.Instance;
+                    list.Add(slot.Occupant.Instance);
+                }
+            }
+
+            ctx.ProvidedAttributes = GameState.Ensure().SumEffectiveAttributes(list);
+            ctx.Tier = GameState.EvaluateTier(_current.ResolveRequirements(), ctx.ProvidedAttributes);
+            return ctx;
         }
 
         public EventData CurrentEvent => _current;

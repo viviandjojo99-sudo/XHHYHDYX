@@ -14,5 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::XHHY.Game.Data.CardTypeDefinition
   typeId: zhongzi
   displayName: "\u79CD\u5B50"
+  groupId: seed
   icon: {fileID: 0}
-  sortOrder: 7
+  sortOrder: 10
+  defaultStackable: 1

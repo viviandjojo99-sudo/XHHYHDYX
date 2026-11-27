@@ -18,12 +18,18 @@ Unity 6, UGUI, TextMeshPro, New Input System. Narrative card game, not combat.
 - If a requirement is ambiguous, ask before creating a new script.
 - Prefer editing existing files. Touch about three files per task unless the task names more.
 
-Phase order, one at a time, tag before the next:
+Phase order (P0–P10), one at a time, tag before the next:
 
-1. Hand layout, then map-vs-UI input, then verify the current event loop.
-2. Deck vs hand split.
-3. Confirm runs settlements. Cancel changes nothing.
-4. Switches, triggers, common events.
-5. Inspector tooling only after phase 4 works from assets.
+0. Verify current event loop (open → slot filter → drag → preview → confirm/cancel). Tag `phase1-loop`.
+1. SpringMotion / MotionSettings liquid feel on hand, drag tilt, dock, panel, tags.
+2. AttributeCatalog + card/event attribute lists; fine type tags; stackable/equip/food fields; ID validator.
+3. Deck vs hand split (CardInstance, GameState, DeckConfig). Tag after verify.
+4. Hand card face (attrs + count) + flat fine HandCardTag bar + slot filter.
+5. Requirement diff panel (threshold tiers, Attribute prefab rows).
+6. Confirm runs settlements (SerializeReference conditions/commands). Cancel changes nothing. Tag `phase3-settle`.
+7. CardInformation: character eat/equip, effective attrs.
+8. Switches, variables, rounds, common events. Tag `phase4-events`.
+9. RPG Maker-like event editor window.
+10. Alchemy as event asset (recipe quality + GrantRecipeOutput).
 
-Alchemy brewing is a later event asset (recipe, herbs, tool, character), not a new system before phase 3. Tags and a card-id validator are data-foundation work, not part of hand layout.
+Alchemy brewing is a later event asset (recipe, herbs, tool, character), not a new system before P6. Tags and a card-id validator are data-foundation (P2), not part of hand layout.

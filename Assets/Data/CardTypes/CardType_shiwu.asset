@@ -14,5 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::XHHY.Game.Data.CardTypeDefinition
   typeId: shiwu
   displayName: "\u98DF\u7269"
+  groupId: food
   icon: {fileID: 0}
-  sortOrder: 6
+  sortOrder: 9
+  defaultStackable: 1

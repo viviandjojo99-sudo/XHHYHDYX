@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1b2c3d4e5f601010000000000000003, type: 3}
+  m_Name: "Card_\u5E9F\u4E39"
+  m_EditorClassIdentifier: Assembly-CSharp::XHHY.Game.Data.CardData
+  cardId: danyao.feidan
+  title: "\u5E9F\u4E39"
+  description: "\u5931\u8D25\u4EA7\u7269\u3002"
+  icon: {fileID: 0}
+  cardType: {fileID: 11400000, guid: a842fdf2d5dd9b94fa0d9439a1475870, type: 2}
+  attributes: []
+  stackable: 1
+  maxStack: 99
+  tags: []
+  skillPoints: 0
+  equipSlots: []
+  onEat: []
+  eatDurationRounds: 0
+  equipModifiers: []
+  equipSlotId: 
+  recipe:
+    bands: []
+    requiredHerbTypeIds: []
+    highOutput: {fileID: 0}
+    midOutput: {fileID: 0}
+    failOutput: {fileID: 0}
+    explodeAttributeId: fire
+  elementMetal: 0
+  elementWood: 0
+  elementWater: 0
+  elementFire: 0
+  elementEarth: 0

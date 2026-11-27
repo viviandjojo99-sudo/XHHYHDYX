@@ -14,5 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::XHHY.Game.Data.CardTypeDefinition
   typeId: yaocai
   displayName: "\u836F\u6750"
+  groupId: herb
   icon: {fileID: 0}
-  sortOrder: 1
+  sortOrder: 4
+  defaultStackable: 1

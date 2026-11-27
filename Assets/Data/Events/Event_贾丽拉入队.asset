@@ -1,0 +1,69 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1b2c3d4e5f601010000000000000005, type: 3}
+  m_Name: "Event_\u8D3E\u4E3D\u62C9\u5165\u961F"
+  m_EditorClassIdentifier: Assembly-CSharp::XHHY.Game.Data.EventData
+  eventId: event_jialila_join
+  title: "\u8D3E\u4E3D\u62C9\u6210\u4E3A\u76DF\u53CB"
+  background: {fileID: 0}
+  openingText: "\u8D3E\u4E3D\u62C9\u51B3\u5B9A\u4E0E\u4F60\u540C\u884C\u3002"
+  previewOutcomeText: "\u5979\u5C06\u52A0\u5165\u4F60\u7684\u624B\u724C\u3002"
+  requiredAttributes:
+    metal: 0
+    wood: 0
+    water: 0
+    fire: 0
+    earth: 0
+  requirements: []
+  slots: []
+  appearConditions:
+  - rid: 3941240676529209495
+  - rid: 3941240676529209496
+  repeatable: 0
+  autoStartOnRound: 1
+  outcomes:
+  - outcomeId: join
+    previewText: "\u8D3E\u4E3D\u62C9\u5165\u961F\u3002"
+    resultText: "\u8D3E\u4E3D\u62C9\u52A0\u5165\u4E86\u4F60\u3002"
+    previewMode: 0
+    conditions: []
+    commands:
+    - rid: 3941240676529209497
+    - rid: 3941240676529209498
+    - rid: 3941240676529209499
+  references:
+    version: 2
+    RefIds:
+    - rid: 3941240676529209495
+      type: {class: CondSwitchIs, ns: XHHY.Game.Settlement, asm: Assembly-CSharp}
+      data:
+        switchKey: jialila_corpse_done
+        expected: 1
+    - rid: 3941240676529209496
+      type: {class: CondCardAlive, ns: XHHY.Game.Settlement, asm: Assembly-CSharp}
+      data:
+        cardId: renwu.jialila
+        alive: 1
+    - rid: 3941240676529209497
+      type: {class: CmdMoveCard, ns: XHHY.Game.Settlement, asm: Assembly-CSharp}
+      data:
+        cardId: renwu.jialila
+        from: 0
+        to: 1
+    - rid: 3941240676529209498
+      type: {class: CmdMarkEventCompleted, ns: XHHY.Game.Settlement, asm: Assembly-CSharp}
+      data:
+        eventId: event_jialila_join
+    - rid: 3941240676529209499
+      type: {class: CmdShowResult, ns: XHHY.Game.Settlement, asm: Assembly-CSharp}
+      data:
+        text: "\u8D3E\u4E3D\u62C9\u52A0\u5165\u4E86\u4F60\u3002"

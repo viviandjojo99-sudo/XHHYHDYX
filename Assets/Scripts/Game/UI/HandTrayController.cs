@@ -4,35 +4,52 @@ using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using XHHY.Game.Data;
 using XHHY.Game.Interaction;
+using XHHY.Game.Motion;
+using XHHY.Game.Runtime;
 
 namespace XHHY.Game.UI
 {
     /// <summary>
-    /// 手牌栏：平铺；超出宽度则挤压堆叠；鼠标滑过附近卡牌局部展开（苏丹式）。
-    /// 不改鼠标坐标，只改卡牌 anchoredPosition。
+    /// 只计算手牌目标位置。位移由 HandCardView 弹簧过去。拖拽期间不重算。
     /// </summary>
     public class HandTrayController : MonoBehaviour
     {
         [SerializeField] RectTransform handCardContainer;
         [SerializeField] HandCardView cardPrefab;
-        [SerializeField] HandDeckConfig deckConfig;
-
-        [Header("布局")]
-        [SerializeField] float preferredSpacing = 148f;
-        [SerializeField] float minSpacing = 36f;
-        [SerializeField] float sidePadding = 20f;
-        [SerializeField] float baseY = 10f;
-        [SerializeField] float hoverExpand = 90f;
-        [SerializeField] float hoverLift = 36f;
-        [SerializeField] float hoverFalloff = 1.25f;
+        [SerializeField] DeckConfig deckConfig;
+        [SerializeField] HandLayoutSettings layoutSettings;
+        [SerializeField] MotionSettings motionSettings;
+        [SerializeField] UiSfx uiSfx;
 
         readonly List<HandCardView> _cards = new List<HandCardView>();
+        readonly List<HandCardView> _visible = new List<HandCardView>();
         CardTypeDefinition _activeFilter;
+        string _activeGroupFilter;
+        EventSlotData _acceptSlot;
         bool _built;
+        bool _frozen;
+        bool _dirty = true;
         int _hoverIndex = -1;
+        float _originX;
+        float _step = 1f;
+        GameState _state;
 
+        public int LayoutComputeCount { get; private set; }
         public IReadOnlyList<HandCardView> Cards => _cards;
         public RectTransform HandCardContainer => handCardContainer;
+        public MotionSettings Motion => motionSettings;
+        public UiSfx Sfx => uiSfx;
+        public CardTypeDefinition ActiveFilter => _activeFilter;
+
+        HandLayoutSettings Settings
+        {
+            get
+            {
+                if (layoutSettings == null)
+                    layoutSettings = ScriptableObject.CreateInstance<HandLayoutSettings>();
+                return layoutSettings;
+            }
+        }
 
         void Awake()
         {
@@ -44,24 +61,37 @@ namespace XHHY.Game.UI
             if (!_built && deckConfig != null)
                 BuildFromDeck(deckConfig);
             else
-                Relayout();
+                ApplyTargets(true);
         }
 
         void Update()
         {
-            if (handCardContainer == null || _cards.Count == 0)
-                return;
-            if (HandCardDrag.AnyDragging)
+            if (handCardContainer == null)
                 return;
 
-            int next = ResolveHoverIndex();
-            if (next == _hoverIndex)
-                return;
-            _hoverIndex = next;
-            Relayout();
+            if (!_frozen)
+            {
+                CollectVisible();
+                int next = ResolveHoverIndex();
+                if (next != _hoverIndex || _dirty)
+                {
+                    _hoverIndex = next;
+                    ApplyTargets(false);
+                    _dirty = false;
+                }
+            }
+
+            float dt = Time.unscaledDeltaTime;
+            var motion = motionSettings != null ? motionSettings : MotionSettings.CreateRuntimeDefaults();
+            for (int i = 0; i < _cards.Count; i++)
+            {
+                var card = _cards[i];
+                if (card == null || card.IsInSlot || card.LayoutLocked)
+                    continue;
+                card.TickLayout(motion, dt);
+            }
         }
 
-        /// <summary>HandTray / HandCard 必须有 Graphic 挡射线，否则点手牌区会拖到地图。</summary>
         void EnsureRaycastBlocker()
         {
             EnsureImageRaycast(gameObject, new Color(1f, 1f, 1f, 0.01f));
@@ -86,26 +116,83 @@ namespace XHHY.Game.UI
             image.raycastTarget = true;
         }
 
-        public void BuildFromDeck(HandDeckConfig config)
+        public void NotifyDragBegan(HandCardView card)
+        {
+            _frozen = true;
+            card?.SetLayoutLocked(true);
+        }
+
+        public void NotifyDragEnded()
+        {
+            _frozen = false;
+            _dirty = false;
+            ApplyTargets(false);
+        }
+
+        public void BuildFromDeck(DeckConfig config)
         {
             ClearAll();
             ClearContainerPlaceholders();
             EnsureRaycastBlocker();
 
-            if (config == null || config.startingCards == null || cardPrefab == null || handCardContainer == null)
-                return;
-
-            for (int i = 0; i < config.startingCards.Count; i++)
-            {
-                var data = config.startingCards[i];
-                if (data == null)
-                    continue;
-                SpawnCard(data);
-            }
+            deckConfig = config;
+            _state = GameState.Ensure();
+            _state.LoadFromDeck(config);
+            RebuildViewsFromState();
 
             _built = true;
-            Relayout();
+            _dirty = true;
+            ApplyTargets(true);
             ApplyFilter();
+        }
+
+        public void RebuildViewsFromState()
+        {
+            ClearViewsOnly();
+            if (_state == null)
+                _state = GameState.Ensure();
+
+            var hand = _state.GetByLocation(CardLocation.Hand);
+            var stacked = new Dictionary<string, CardInstance>();
+            var singles = new List<CardInstance>();
+
+            for (int i = 0; i < hand.Count; i++)
+            {
+                var inst = hand[i];
+                if (inst?.data == null)
+                    continue;
+                if (inst.data.IsStackable)
+                {
+                    if (stacked.TryGetValue(inst.data.cardId, out var existing))
+                    {
+                        existing.count += inst.count;
+                        inst.location = CardLocation.Consumed;
+                    }
+                    else
+                    {
+                        stacked[inst.data.cardId] = inst;
+                    }
+                }
+                else
+                {
+                    singles.Add(inst);
+                }
+            }
+
+            foreach (var kv in stacked)
+                SpawnCard(kv.Value, kv.Value.count);
+            for (int i = 0; i < singles.Count; i++)
+                SpawnCard(singles[i], 1);
+        }
+
+        void RefreshStackViews()
+        {
+            for (int i = 0; i < _cards.Count; i++)
+            {
+                var v = _cards[i];
+                if (v?.Instance != null && v.Instance.data != null && v.Instance.data.IsStackable)
+                    v.SetDisplayCount(v.Instance.count);
+            }
         }
 
         public HandCardView SpawnCard(CardData data)
@@ -113,7 +200,20 @@ namespace XHHY.Game.UI
             var view = Instantiate(cardPrefab, handCardContainer);
             view.gameObject.SetActive(true);
             view.Bind(data, this);
+            view.GetComponent<HandCardDrag>()?.SetMotion(motionSettings, uiSfx);
             _cards.Add(view);
+            _dirty = true;
+            return view;
+        }
+
+        public HandCardView SpawnCard(CardInstance instance, int displayCount)
+        {
+            var view = Instantiate(cardPrefab, handCardContainer);
+            view.gameObject.SetActive(true);
+            view.Bind(instance, this, displayCount);
+            view.GetComponent<HandCardDrag>()?.SetMotion(motionSettings, uiSfx);
+            _cards.Add(view);
+            _dirty = true;
             return view;
         }
 
@@ -122,36 +222,130 @@ namespace XHHY.Game.UI
             if (card == null)
                 return;
 
+            if (card.Instance != null && _state != null)
+            {
+                if (card.Instance.data != null && card.Instance.data.IsStackable)
+                {
+                    var stack = _state.FindStackInHand(card.Instance.data.cardId);
+                    HandCardView stackView = null;
+                    if (stack != null && stack != card.Instance)
+                    {
+                        for (int i = 0; i < _cards.Count; i++)
+                        {
+                            var other = _cards[i];
+                            if (other != null && other != card && other.Instance == stack)
+                            {
+                                stackView = other;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (stackView != null)
+                    {
+                        stack.count += Mathf.Max(1, card.Instance.count);
+                        card.Instance.location = CardLocation.Consumed;
+                        stackView.SetDisplayCount(stack.count);
+                        Destroy(card.gameObject);
+                        _cards.Remove(card);
+                        _frozen = false;
+                        _dirty = true;
+                        ApplyTargets(false);
+                        return;
+                    }
+                }
+                _state.MoveCard(card.Instance, CardLocation.Hand);
+            }
+
             if (!_cards.Contains(card))
                 _cards.Add(card);
 
-            card.transform.SetParent(handCardContainer, false);
+            var rt = (RectTransform)card.transform;
+            rt.SetParent(handCardContainer, true);
+            rt.anchorMin = new Vector2(0.5f, 0f);
+            rt.anchorMax = new Vector2(0.5f, 0f);
+            rt.pivot = new Vector2(0.5f, 0f);
             card.gameObject.SetActive(true);
-            Relayout();
-            ApplyFilter();
+            card.SetLayoutLocked(false);
+            card.CaptureSpringFromTransform();
+            _frozen = false;
+            _dirty = true;
+            ApplyTargets(false);
         }
 
         public void NotifyCardLeftHand(HandCardView card)
         {
-            Relayout();
-            ApplyFilter();
+            if (card?.Instance != null && _state != null)
+            {
+                var inst = card.Instance;
+                if (inst.data != null && inst.data.IsStackable && inst.count > 1)
+                {
+                    int remain = inst.count - 1;
+                    inst.count = 1;
+                    card.SetDisplayCount(1);
+                    var rest = CardInstance.Create(inst.data, CardLocation.Hand, remain);
+                    _state.GrantTakenFromStack(rest);
+                    SpawnCard(rest, remain);
+                }
+                _state.MoveCard(inst, CardLocation.Slot);
+            }
+            if (_frozen)
+                return;
+            _dirty = true;
+            ApplyTargets(false);
         }
 
         public void SetTypeFilter(CardTypeDefinition type)
         {
             _activeFilter = type;
+            _activeGroupFilter = null;
+            _acceptSlot = null;
             ApplyFilter();
+            uiSfx?.PlayToggle();
+        }
+
+        public void SetAcceptFilter(EventSlotData slot)
+        {
+            _acceptSlot = slot;
+            _activeFilter = null;
+            _activeGroupFilter = null;
+            ApplyFilter();
+            uiSfx?.PlayToggle();
+        }
+
+        public bool IsFiltering(EventSlotData slot) => _acceptSlot != null && _acceptSlot == slot;
+
+        public void SetGroupFilter(string groupId)
+        {
+            _activeGroupFilter = groupId;
+            _activeFilter = null;
+            _acceptSlot = null;
+            ApplyFilter();
+            uiSfx?.PlayToggle();
         }
 
         public void ClearTypeFilter()
         {
             _activeFilter = null;
+            _activeGroupFilter = null;
+            _acceptSlot = null;
             ApplyFilter();
         }
 
-        public void BringToFront()
+        public void BringToFront() => transform.SetAsLastSibling();
+
+        public int CountByType(CardTypeDefinition type)
         {
-            transform.SetAsLastSibling();
+            int n = 0;
+            for (int i = 0; i < _cards.Count; i++)
+            {
+                var c = _cards[i];
+                if (c == null || c.IsInSlot || c.Data?.cardType == null)
+                    continue;
+                if (type == null || c.Data.cardType.typeId == type.typeId)
+                    n += Mathf.Max(1, c.DisplayCount);
+            }
+            return n;
         }
 
         void ApplyFilter()
@@ -162,116 +356,160 @@ namespace XHHY.Game.UI
                 if (card == null || card.IsInSlot)
                     continue;
 
-                bool show = _activeFilter == null
-                            || (card.Data != null
-                                && card.Data.cardType != null
-                                && card.Data.cardType.typeId == _activeFilter.typeId);
+                bool show = true;
+                if (_acceptSlot != null)
+                {
+                    show = _acceptSlot.Accepts(card.Data);
+                }
+                else if (_activeFilter != null)
+                {
+                    show = card.Data != null && card.Data.cardType != null
+                           && card.Data.cardType.typeId == _activeFilter.typeId;
+                }
+                else if (!string.IsNullOrEmpty(_activeGroupFilter))
+                {
+                    show = card.Data != null && card.Data.cardType != null
+                           && card.Data.cardType.groupId == _activeGroupFilter;
+                }
+
                 card.SetVisible(show);
             }
 
-            Relayout();
+            _dirty = true;
+            if (!_frozen)
+                ApplyTargets(false);
         }
 
-        public void Relayout()
+        public void ApplyTargets(bool snap)
         {
-            if (handCardContainer == null)
+            if (_frozen || handCardContainer == null)
                 return;
 
-            var visible = CollectVisible();
-            int count = visible.Count;
+            CollectVisible();
+            int count = _visible.Count;
+            LayoutComputeCount++;
             if (count == 0)
                 return;
 
-            float cardWidth = ((RectTransform)visible[0].transform).rect.width;
+            var settings = Settings;
+            float cardWidth = ((RectTransform)_visible[0].transform).rect.width;
             if (cardWidth < 1f)
-                cardWidth = 140f;
+                cardWidth = settings.fallbackCardWidth;
 
-            float avail = Mathf.Max(0f, handCardContainer.rect.width - sidePadding * 2f);
-            float spacing = preferredSpacing;
-            if (count > 1)
+            float trayWidth = handCardContainer.rect.width;
+            if (trayWidth < 1f)
+                trayWidth = 1600f;
+
+            float gap = Mathf.Max(0f, settings.gap);
+            float natural = count * cardWidth + Mathf.Max(0, count - 1) * gap;
+            float step = cardWidth + gap;
+            if (count > 1 && natural > trayWidth)
+                step = (trayWidth - cardWidth) / (count - 1);
+
+            _step = Mathf.Max(1f, step);
+            float span = Mathf.Max(0, count - 1) * _step;
+            _originX = -span * 0.5f;
+
+            var baseX = new float[count];
+            var posX = new float[count];
+            for (int i = 0; i < count; i++)
+                baseX[i] = posX[i] = _originX + i * _step;
+
+            if (_hoverIndex >= 0 && _hoverIndex < count)
             {
-                float fit = (avail - cardWidth) / (count - 1);
-                spacing = Mathf.Clamp(fit, minSpacing, preferredSpacing);
-            }
+                for (int i = 0; i < count; i++)
+                {
+                    int dist = Mathf.Abs(i - _hoverIndex);
+                    if (dist == 0)
+                        continue;
+                    float falloff = Falloff(dist);
+                    float sign = i < _hoverIndex ? -1f : 1f;
+                    posX[i] = baseX[i] + sign * settings.push * falloff;
+                }
 
-            float totalWidth = cardWidth + Mathf.Max(0, count - 1) * spacing;
-            float startX = -totalWidth * 0.5f + cardWidth * 0.5f;
+                float half = trayWidth * 0.5f;
+                float minCenter = -half + cardWidth * 0.5f;
+                float maxCenter = half - cardWidth * 0.5f;
+                float overL = minCenter - posX[0];
+                float overR = posX[count - 1] - maxCenter;
+                float over = Mathf.Max(overL, overR);
+                if (over > 0f)
+                {
+                    float peak = 0f;
+                    for (int i = 0; i < count; i++)
+                        peak = Mathf.Max(peak, Mathf.Abs(posX[i] - baseX[i]));
+                    float scale = peak <= 0.001f ? 0f : Mathf.Clamp01((peak - over) / peak);
+                    for (int i = 0; i < count; i++)
+                        posX[i] = baseX[i] + (posX[i] - baseX[i]) * scale;
+                }
+            }
 
             for (int i = 0; i < count; i++)
             {
-                var rt = (RectTransform)visible[i].transform;
-                rt.anchorMin = new Vector2(0.5f, 0f);
-                rt.anchorMax = new Vector2(0.5f, 0f);
-                rt.pivot = new Vector2(0.5f, 0f);
-                rt.localRotation = Quaternion.identity;
-                rt.localScale = Vector3.one;
-
-                float x = startX + i * spacing;
-                float y = baseY;
-
-                if (_hoverIndex >= 0 && count > 1)
-                {
-                    float dist = Mathf.Abs(i - _hoverIndex);
-                    float w = Mathf.Exp(-dist * hoverFalloff);
-                    // 左右推开，悬停卡抬高
-                    if (i < _hoverIndex)
-                        x -= hoverExpand * w;
-                    else if (i > _hoverIndex)
-                        x += hoverExpand * w;
-                    else
-                        y += hoverLift;
-                }
-
-                rt.anchoredPosition = new Vector2(x, y);
-                rt.SetSiblingIndex(i);
+                bool hovered = i == _hoverIndex;
+                float y = settings.baseY + (hovered ? settings.hoverLift : 0f);
+                float scale = hovered ? settings.hoverScale : 1f;
+                _visible[i].SetLayoutTarget(new Vector2(posX[i], y), scale, snap);
+                _visible[i].transform.SetSiblingIndex(i);
             }
 
-            // 悬停卡画在最前
             if (_hoverIndex >= 0 && _hoverIndex < count)
-                visible[_hoverIndex].transform.SetAsLastSibling();
+                _visible[_hoverIndex].transform.SetAsLastSibling();
         }
 
-        List<HandCardView> CollectVisible()
+        float Falloff(int distance)
         {
-            var visible = new List<HandCardView>();
+            var settings = Settings;
+            if (distance == 1) return settings.falloff1;
+            if (distance == 2) return settings.falloff2;
+            if (distance == 3) return settings.falloff3;
+            return 0f;
+        }
+
+        void CollectVisible()
+        {
+            _visible.Clear();
             for (int i = 0; i < _cards.Count; i++)
             {
                 var card = _cards[i];
-                if (card == null || card.IsInSlot || !card.gameObject.activeSelf)
+                if (card == null || card.IsInSlot || card.LayoutLocked || !card.gameObject.activeSelf)
                     continue;
-                visible.Add(card);
+                _visible.Add(card);
             }
-
-            return visible;
         }
 
         int ResolveHoverIndex()
         {
-            var visible = CollectVisible();
-            if (visible.Count == 0 || Mouse.current == null)
+            if (_visible.Count == 0 || Mouse.current == null)
                 return -1;
 
-            if (!RectTransformUtility.RectangleContainsScreenPoint(
-                    handCardContainer,
-                    Mouse.current.position.ReadValue(),
-                    null))
+            var canvas = handCardContainer.GetComponentInParent<Canvas>();
+            Camera cam = null;
+            if (canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay)
+                cam = canvas.worldCamera;
+
+            Vector2 screen = Mouse.current.position.ReadValue();
+            if (!RectTransformUtility.RectangleContainsScreenPoint(handCardContainer, screen, cam))
                 return -1;
 
-            float bestDist = float.MaxValue;
-            int best = -1;
-            for (int i = 0; i < visible.Count; i++)
-            {
-                var rt = (RectTransform)visible[i].transform;
-                Vector2 screen = RectTransformUtility.WorldToScreenPoint(null, rt.position);
-                float dx = Mathf.Abs(Mouse.current.position.ReadValue().x - screen.x);
-                if (dx < bestDist)
-                {
-                    bestDist = dx;
-                    best = i;
-                }
-            }
+            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                    handCardContainer, screen, cam, out var local))
+                return -1;
 
-            return best;
+            int count = _visible.Count;
+            float step = Mathf.Max(1f, _step);
+            int nearest = Mathf.Clamp(Mathf.RoundToInt((local.x - _originX) / step), 0, count - 1);
+            if (_hoverIndex < 0 || _hoverIndex >= count)
+                return nearest;
+
+            float center = _originX + _hoverIndex * step;
+            float delta = local.x - center;
+            float gate = step * Settings.hysteresis;
+            if (Mathf.Abs(delta) < gate)
+                return _hoverIndex;
+
+            int dir = delta > 0f ? 1 : -1;
+            return Mathf.Clamp(_hoverIndex + dir, 0, count - 1);
         }
 
         void ClearContainerPlaceholders()
@@ -283,17 +521,23 @@ namespace XHHY.Game.UI
                 Destroy(handCardContainer.GetChild(i).gameObject);
         }
 
-        void ClearAll()
+        void ClearViewsOnly()
         {
             for (int i = 0; i < _cards.Count; i++)
             {
                 if (_cards[i] != null)
                     Destroy(_cards[i].gameObject);
             }
-
             _cards.Clear();
-            _built = false;
+            _visible.Clear();
             _hoverIndex = -1;
+        }
+
+        void ClearAll()
+        {
+            ClearViewsOnly();
+            _built = false;
+            _dirty = true;
         }
     }
 }

@@ -1,0 +1,152 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1b2c3d4e5f601010000000000000005, type: 3}
+  m_Name: "Event_\u70BC\u4E39"
+  m_EditorClassIdentifier: Assembly-CSharp::XHHY.Game.Data.EventData
+  eventId: event_liandan
+  title: "\u70BC\u4E39"
+  background: {fileID: 0}
+  openingText: "\u67B6\u8D77\u4E39\u7089\uFF0C\u6309\u4E39\u65B9\u6295\u5165\u836F\u6750\u3002"
+  previewOutcomeText: "\u706B\u5019\u51B3\u5B9A\u54C1\u7EA7\u3002"
+  requiredAttributes:
+    metal: 0
+    wood: 0
+    water: 0
+    fire: 0
+    earth: 0
+  requirements:
+  - attributeId: wood
+    required: 4
+  - attributeId: fire
+    required: 6
+  slots:
+  - slotId: slot_recipe
+    acceptType: {fileID: 11400000, guid: 82d38ebd91b7b8f46a7231e17d57fde2, type: 2}
+    acceptTypes:
+    - {fileID: 11400000, guid: 82d38ebd91b7b8f46a7231e17d57fde2, type: 2}
+    acceptGroup: 
+    anchoredPosition: {x: -300, y: 0}
+    required: 1
+  - slotId: slot_person
+    acceptType: {fileID: 11400000, guid: 9b84c2c79551ea647b318579cd119d59, type: 2}
+    acceptTypes:
+    - {fileID: 11400000, guid: 9b84c2c79551ea647b318579cd119d59, type: 2}
+    acceptGroup: 
+    anchoredPosition: {x: -180, y: 0}
+    required: 1
+  - slotId: slot_main
+    acceptType: {fileID: 0}
+    acceptTypes: []
+    acceptGroup: herb
+    anchoredPosition: {x: -60, y: 0}
+    required: 0
+  - slotId: slot_sub
+    acceptType: {fileID: 0}
+    acceptTypes: []
+    acceptGroup: herb
+    anchoredPosition: {x: 60, y: 0}
+    required: 0
+  - slotId: slot_catalyst
+    acceptType: {fileID: 0}
+    acceptTypes: []
+    acceptGroup: herb
+    anchoredPosition: {x: 180, y: 0}
+    required: 0
+  - slotId: slot_furnace
+    acceptType: {fileID: 11400000, guid: c1cf6aaf11da2ca458ee5d32037103ca, type: 2}
+    acceptTypes:
+    - {fileID: 11400000, guid: c1cf6aaf11da2ca458ee5d32037103ca, type: 2}
+    acceptGroup: 
+    anchoredPosition: {x: 300, y: 0}
+    required: 0
+  appearConditions: []
+  repeatable: 1
+  autoStartOnRound: 0
+  outcomes:
+  - outcomeId: explode
+    previewText: "\u706B\u52BF\u5931\u63A7\u2026\u2026"
+    resultText: "\u70B8\u7089\uFF01"
+    previewMode: 0
+    conditions:
+    - rid: 3941240676529209484
+    commands:
+    - rid: 3941240676529209485
+    - rid: 3941240676529209486
+  - outcomeId: high
+    previewText: "\u4E39\u6210\u4E0A\u54C1\u3002"
+    resultText: "\u70BC\u6210\u4E0A\u54C1\u4E39\u836F\u3002"
+    previewMode: 0
+    conditions:
+    - rid: 3941240676529209487
+    commands:
+    - rid: 3941240676529209488
+    - rid: 3941240676529209489
+  - outcomeId: mid
+    previewText: "\u4E39\u6210\u4E2D\u54C1\u3002"
+    resultText: "\u70BC\u6210\u4E2D\u54C1\u4E39\u836F\u3002"
+    previewMode: 0
+    conditions:
+    - rid: 3941240676529209490
+    commands:
+    - rid: 3941240676529209491
+    - rid: 3941240676529209492
+  - outcomeId: fail
+    previewText: "\u4F3C\u4E4E\u8981\u5931\u8D25\u2026\u2026"
+    resultText: "\u53EA\u70BC\u51FA\u5E9F\u4E39\u3002"
+    previewMode: 0
+    conditions: []
+    commands:
+    - rid: 3941240676529209493
+    - rid: 3941240676529209494
+  references:
+    version: 2
+    RefIds:
+    - rid: 3941240676529209484
+      type: {class: CondRecipeQuality, ns: XHHY.Game.Settlement, asm: Assembly-CSharp}
+      data:
+        quality: 3
+    - rid: 3941240676529209485
+      type: {class: CmdGrantRecipeOutput, ns: XHHY.Game.Settlement, asm: Assembly-CSharp}
+      data: 
+    - rid: 3941240676529209486
+      type: {class: CmdMarkEventCompleted, ns: XHHY.Game.Settlement, asm: Assembly-CSharp}
+      data:
+        eventId: event_liandan
+    - rid: 3941240676529209487
+      type: {class: CondRecipeQuality, ns: XHHY.Game.Settlement, asm: Assembly-CSharp}
+      data:
+        quality: 2
+    - rid: 3941240676529209488
+      type: {class: CmdGrantRecipeOutput, ns: XHHY.Game.Settlement, asm: Assembly-CSharp}
+      data: 
+    - rid: 3941240676529209489
+      type: {class: CmdMarkEventCompleted, ns: XHHY.Game.Settlement, asm: Assembly-CSharp}
+      data:
+        eventId: event_liandan
+    - rid: 3941240676529209490
+      type: {class: CondRecipeQuality, ns: XHHY.Game.Settlement, asm: Assembly-CSharp}
+      data:
+        quality: 1
+    - rid: 3941240676529209491
+      type: {class: CmdGrantRecipeOutput, ns: XHHY.Game.Settlement, asm: Assembly-CSharp}
+      data: 
+    - rid: 3941240676529209492
+      type: {class: CmdMarkEventCompleted, ns: XHHY.Game.Settlement, asm: Assembly-CSharp}
+      data:
+        eventId: event_liandan
+    - rid: 3941240676529209493
+      type: {class: CmdGrantRecipeOutput, ns: XHHY.Game.Settlement, asm: Assembly-CSharp}
+      data: 
+    - rid: 3941240676529209494
+      type: {class: CmdMarkEventCompleted, ns: XHHY.Game.Settlement, asm: Assembly-CSharp}
+      data:
+        eventId: event_liandan

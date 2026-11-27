@@ -9,6 +9,8 @@ namespace XHHY.Game.Map
     /// </summary>
     public class MapEventBoard : MonoBehaviour
     {
+        static MapEventBoard _instance;
+
         [System.Serializable]
         public class Entry
         {
@@ -19,9 +21,23 @@ namespace XHHY.Game.Map
 
         public List<Entry> entries = new List<Entry>();
 
+        void Awake() => _instance = this;
+
+        void OnDestroy()
+        {
+            if (_instance == this)
+                _instance = null;
+        }
+
         void Start()
         {
             RefreshVisibility();
+        }
+
+        public static void SetMarkerActive(string eventId, bool active)
+        {
+            if (_instance != null)
+                _instance.ShowEvent(eventId, active);
         }
 
         public void RefreshVisibility()

@@ -14,5 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::XHHY.Game.Data.CardTypeDefinition
   typeId: zhuangbei
   displayName: "\u88C5\u5907"
+  groupId: equip
   icon: {fileID: 0}
-  sortOrder: 2
+  sortOrder: 5
+  defaultStackable: 0

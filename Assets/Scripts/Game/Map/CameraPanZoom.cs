@@ -1,26 +1,22 @@
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 namespace XHHY.Game.Map
 {
     /// <summary>
-    /// 主相机平移缩放。指针落在任意 UI Graphic 上时不拖地图、不滚轮缩放。
-    /// （New Input System 下 IsPointerOverGameObject() 常失效，改用 RaycastAll。）
+    /// 主相机平移缩放。按下时若不在 UI 上才开始拖；途中进入 UI 则停，直到松开。
     /// </summary>
     [RequireComponent(typeof(Camera))]
     public class CameraPanZoom : MonoBehaviour
     {
-        [SerializeField] float zoomSpeed = 2f;
+        [SerializeField] float zoomSpeed = 2.8f;
         [SerializeField] float minOrthoSize = 2f;
         [SerializeField] float maxOrthoSize = 12f;
         [SerializeField] float panSpeed = 1f;
 
-        static readonly List<RaycastResult> RaycastHits = new List<RaycastResult>(16);
-
         Camera _cam;
         bool _panning;
+        bool _blockedUntilRelease;
         Vector2 _lastScreen;
 
         void Awake()
@@ -40,64 +36,63 @@ namespace XHHY.Game.Map
             HandlePan(mouse);
         }
 
-        public static bool PointerOverUi()
-        {
-            if (EventSystem.current == null || Mouse.current == null)
-                return false;
-
-            var eventData = new PointerEventData(EventSystem.current)
-            {
-                position = Mouse.current.position.ReadValue()
-            };
-            RaycastHits.Clear();
-            EventSystem.current.RaycastAll(eventData, RaycastHits);
-            return RaycastHits.Count > 0;
-        }
-
         void HandleZoom(Mouse mouse)
         {
             float scroll = mouse.scroll.ReadValue().y;
             if (Mathf.Abs(scroll) < 0.01f)
                 return;
 
-            if (PointerOverUi())
+            if (UiPointerGate.IsOverUi())
                 return;
 
+            // 新输入系统有的鼠标一格是 1，有的是 120。统一成「一格」。
+            float notches = Mathf.Abs(scroll) > 10f ? scroll / 120f : scroll;
             _cam.orthographicSize = Mathf.Clamp(
-                _cam.orthographicSize - scroll * zoomSpeed * 0.01f,
+                _cam.orthographicSize - notches * zoomSpeed,
                 minOrthoSize,
                 maxOrthoSize);
         }
 
         void HandlePan(Mouse mouse)
         {
-            bool wantPan = mouse.leftButton.isPressed
+            bool pressed = mouse.leftButton.isPressed
                            || mouse.rightButton.isPressed
                            || mouse.middleButton.isPressed;
+            bool began = mouse.leftButton.wasPressedThisFrame
+                         || mouse.rightButton.wasPressedThisFrame
+                         || mouse.middleButton.wasPressedThisFrame;
 
-            if (wantPan && !_panning)
-            {
-                if (PointerOverUi())
-                    return;
-                _panning = true;
-                _lastScreen = mouse.position.ReadValue();
-            }
-            else if (!wantPan)
+            if (!pressed)
             {
                 _panning = false;
-            }
-
-            if (!_panning)
+                _blockedUntilRelease = false;
                 return;
+            }
 
-            // 拖地图途中滑到 UI 上则立刻停
-            if (PointerOverUi())
+            if (began)
+                _blockedUntilRelease = UiPointerGate.IsOverUi();
+
+            if (_blockedUntilRelease)
             {
                 _panning = false;
+                return;
+            }
+
+            if (UiPointerGate.IsOverUi())
+            {
+                _panning = false;
+                _blockedUntilRelease = true;
                 return;
             }
 
             Vector2 screen = mouse.position.ReadValue();
+            if (!_panning)
+            {
+                _panning = true;
+                _lastScreen = screen;
+                return;
+            }
+
             Vector2 delta = screen - _lastScreen;
             _lastScreen = screen;
 

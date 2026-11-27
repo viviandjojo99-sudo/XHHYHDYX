@@ -14,5 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::XHHY.Game.Data.CardTypeDefinition
   typeId: danyao
   displayName: "\u4E39\u836F"
+  groupId: pill
   icon: {fileID: 0}
-  sortOrder: 4
+  sortOrder: 7
+  defaultStackable: 1

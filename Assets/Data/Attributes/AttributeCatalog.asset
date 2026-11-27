@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 50423cb02f0234a4da74ca650c702a59, type: 3}
+  m_Name: AttributeCatalog
+  m_EditorClassIdentifier: Assembly-CSharp::XHHY.Game.Data.AttributeCatalog
+  attributes:
+  - {fileID: 11400000, guid: 6d6acdba5f688974b95cec268ddde6af, type: 2}
+  - {fileID: 11400000, guid: bcf52813bcff447418c3e18706495a0b, type: 2}
+  - {fileID: 11400000, guid: dda4067ec5bd6cc47a4eb7d0f6de69f9, type: 2}
+  - {fileID: 11400000, guid: 48bc9560fd1c9474c9ed7127aae192e6, type: 2}
+  - {fileID: 11400000, guid: 7fa089c35f3bc004b9c9c232ad164417, type: 2}

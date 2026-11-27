@@ -14,6 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::XHHY.Game.Data.CardTypeCatalog
   types:
   - {fileID: 11400000, guid: 9b84c2c79551ea647b318579cd119d59, type: 2}
+  - {fileID: 11400000, guid: 42c9ae1db7d0bfa4cb409ca7ed7980d3, type: 2}
+  - {fileID: 11400000, guid: 28a3a5ebee61c374780fcf076542f991, type: 2}
+  - {fileID: 11400000, guid: b09cbd2eb8b08124ca6e48a3af30cabf, type: 2}
   - {fileID: 11400000, guid: 45282280d7f02a145b2b112952a3301f, type: 2}
   - {fileID: 11400000, guid: 38852bdc7f5c9c1479bc70f2b78766d4, type: 2}
   - {fileID: 11400000, guid: 82d38ebd91b7b8f46a7231e17d57fde2, type: 2}
@@ -22,4 +25,5 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 99df67b669c2b3246beb32ed72205bd6, type: 2}
   - {fileID: 11400000, guid: f03cb4dd4e87b8a4fb2928c06cc2cf42, type: 2}
   - {fileID: 11400000, guid: b6dbcd90768ad4147a654f5f9cb2d087, type: 2}
+  - {fileID: 11400000, guid: c1cf6aaf11da2ca458ee5d32037103ca, type: 2}
   - {fileID: 11400000, guid: 96fad014b556e944392c2f2ba0f5ce00, type: 2}

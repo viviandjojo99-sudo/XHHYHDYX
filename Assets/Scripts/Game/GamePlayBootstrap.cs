@@ -3,6 +3,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
 using XHHY.Game.Data;
 using XHHY.Game.Map;
+using XHHY.Game.Runtime;
 using XHHY.Game.UI;
 
 namespace XHHY.Game
@@ -13,13 +14,17 @@ namespace XHHY.Game
     public class GamePlayBootstrap : MonoBehaviour
     {
         [SerializeField] HandTrayController handTray;
-        [SerializeField] HandDeckConfig startingDeck;
+        [SerializeField] DeckConfig startingDeck;
         [SerializeField] Camera worldCamera;
         [SerializeField] bool hideEventPanelOnStart = true;
         [SerializeField] EventPanelController eventPanel;
+        [SerializeField] CommonEventRunner commonEventRunner;
+        [SerializeField] System.Collections.Generic.List<CommonEventData> commonEvents;
 
         void Awake()
         {
+            GameState.ResetAll();
+
             if (worldCamera == null)
                 worldCamera = Camera.main;
 
@@ -30,7 +35,6 @@ namespace XHHY.Game
             if (hideEventPanelOnStart && eventPanel != null)
                 eventPanel.Close();
 
-            // 主界面始终显示手牌
             if (handTray != null)
             {
                 handTray.gameObject.SetActive(true);
@@ -40,8 +44,15 @@ namespace XHHY.Game
 
         void Start()
         {
+            var state = GameState.Ensure();
             if (handTray != null && startingDeck != null)
                 handTray.BuildFromDeck(startingDeck);
+
+            if (commonEventRunner == null)
+                commonEventRunner = GetComponent<CommonEventRunner>();
+            if (commonEventRunner == null)
+                commonEventRunner = gameObject.AddComponent<CommonEventRunner>();
+            commonEventRunner.Bind(state, commonEvents);
         }
 
         void EnsurePhysics2DRaycaster()

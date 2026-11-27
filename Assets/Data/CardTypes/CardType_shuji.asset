@@ -14,5 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::XHHY.Game.Data.CardTypeDefinition
   typeId: shuji
   displayName: "\u4E66\u7C4D"
+  groupId: book
   icon: {fileID: 0}
-  sortOrder: 9
+  sortOrder: 13
+  defaultStackable: 0

@@ -1,23 +1,36 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using XHHY.Game.Motion;
 using XHHY.Game.UI;
 
 namespace XHHY.Game.Interaction
 {
     /// <summary>
-    /// 卡牌拖拽：用 pointer delta 跟随，不改 pivot，避免拿起瞬间跳偏。
+    /// 拖拽时记下抓取点，牌跟着指针走，不改 pivot。拖拽期间手牌布局冻结。
     /// </summary>
     [RequireComponent(typeof(CanvasGroup))]
-    public class HandCardDrag : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
+    public class HandCardDrag : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerClickHandler, IPointerDownHandler
     {
         public static bool AnyDragging { get; private set; }
+
+        const float ClickSlop = 8f;
 
         HandCardView _view;
         Canvas _rootCanvas;
         RectTransform _rt;
+        RectTransform _dragLayer;
         CanvasGroup _canvasGroup;
         bool _dragging;
+        Vector2 _grabOffset;
+        Vector2 _lastPointerLocal;
+        Vector2 _pressScreen;
+        float _lastVx;
+        MotionSettings _motion;
+        UiSfx _sfx;
+        bool _movedBeyondClick;
+        bool _pressed;
+        bool _liftedFromSlot;
 
         public void Bind(HandCardView view)
         {
@@ -37,9 +50,22 @@ namespace XHHY.Game.Interaction
             }
         }
 
+        public void SetMotion(MotionSettings motion, UiSfx sfx)
+        {
+            _motion = motion;
+            _sfx = sfx;
+        }
+
+        public void OnPointerDown(PointerEventData eventData)
+        {
+            _pressed = true;
+            _movedBeyondClick = false;
+            _pressScreen = eventData.position;
+        }
+
         public void OnBeginDrag(PointerEventData eventData)
         {
-            if (_view == null || _view.IsInSlot)
+            if (_view == null)
                 return;
 
             _rt ??= (RectTransform)transform;
@@ -47,29 +73,59 @@ namespace XHHY.Game.Interaction
             if (_rootCanvas == null)
                 return;
 
+            _liftedFromSlot = _view.IsInSlot;
+            if (_liftedFromSlot)
+                _view.LiftFromSlot();
+
             _dragging = true;
             AnyDragging = true;
+            _movedBeyondClick = true;
+            _pressScreen = eventData.position;
+            _view.HomeTray?.NotifyDragBegan(_view);
+            _sfx?.PlayGrab();
 
-            var dragLayer = _rootCanvas.transform as RectTransform;
-            // 保持世界位置与当前 pivot，避免视觉跳动
-            _rt.SetParent(dragLayer, true);
+            _dragLayer = _rootCanvas.transform as RectTransform;
+            _rt.SetParent(_dragLayer, true);
             _rt.SetAsLastSibling();
-            _rt.localScale = Vector3.one;
 
+            if (ScreenToDragLocal(eventData, out var pointerLocal))
+            {
+                _grabOffset = _rt.anchoredPosition - pointerLocal;
+                _lastPointerLocal = pointerLocal;
+            }
+            else
+            {
+                _grabOffset = Vector2.zero;
+                _lastPointerLocal = _rt.anchoredPosition;
+            }
+
+            _lastVx = 0f;
             _canvasGroup.blocksRaycasts = false;
-            _canvasGroup.alpha = 0.9f;
+            _canvasGroup.alpha = 0.92f;
         }
 
         public void OnDrag(PointerEventData eventData)
         {
-            if (!_dragging || _rt == null)
+            if (!_dragging || _rt == null || _dragLayer == null)
                 return;
 
-            float scale = _rootCanvas != null ? _rootCanvas.scaleFactor : 1f;
-            if (scale < 0.0001f)
-                scale = 1f;
+            if (Vector2.Distance(_pressScreen, eventData.position) > ClickSlop)
+                _movedBeyondClick = true;
 
-            _rt.anchoredPosition += eventData.delta / scale;
+            if (!ScreenToDragLocal(eventData, out var pointerLocal))
+                return;
+
+            float dt = Mathf.Max(0.0001f, Time.unscaledDeltaTime);
+            float vx = (pointerLocal.x - _lastPointerLocal.x) / dt;
+            _lastVx = Mathf.Lerp(_lastVx, vx, 0.35f);
+            _lastPointerLocal = pointerLocal;
+            _rt.anchoredPosition = pointerLocal + _grabOffset;
+
+            var settings = _motion != null ? _motion : MotionSettings.CreateRuntimeDefaults();
+            float tilt = Mathf.Clamp(_lastVx * settings.tiltPerVelocity, -settings.maxTiltDeg, settings.maxTiltDeg);
+            float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(Mathf.Abs(_lastVx) / 800f));
+            _rt.localRotation = Quaternion.Euler(0f, 0f, tilt * t);
+            _view?.SetDragTiltTarget(tilt * t);
         }
 
         public void OnEndDrag(PointerEventData eventData)
@@ -79,13 +135,68 @@ namespace XHHY.Game.Interaction
 
             _dragging = false;
             AnyDragging = false;
-            _canvasGroup.blocksRaycasts = true;
-            _canvasGroup.alpha = 1f;
+            _view?.SetDragTiltTarget(0f);
+
+            if (_view != null && !_view.IsInSlot)
+            {
+                var slot = _liftedFromSlot
+                    ? EventCardSlot.FindUnderPointer(eventData.position, _view.Data)
+                    : EventCardSlot.FindForCard(_rt, eventData.position, _view.Data);
+                if (slot != null)
+                {
+                    slot.Place(_view);
+                    _sfx?.PlayDock();
+                }
+            }
+
+            _liftedFromSlot = false;
+
+            if (_canvasGroup != null)
+            {
+                _canvasGroup.blocksRaycasts = true;
+                _canvasGroup.alpha = 1f;
+            }
 
             if (_view != null && _view.IsInSlot)
+            {
+                _view.HomeTray?.NotifyDragEnded();
                 return;
+            }
 
             _view?.ReturnToHand();
+        }
+
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            if (!_pressed || _dragging || _movedBeyondClick)
+            {
+                _movedBeyondClick = false;
+                _pressed = false;
+                return;
+            }
+
+            _pressed = false;
+            if (_view == null || _view.IsInSlot)
+                return;
+
+            if (Vector2.Distance(_pressScreen, eventData.position) > ClickSlop)
+                return;
+
+            CardInformationPanel.Open(_view);
+        }
+
+        bool ScreenToDragLocal(PointerEventData eventData, out Vector2 local)
+        {
+            local = Vector2.zero;
+            if (_dragLayer == null)
+                return false;
+
+            Camera cam = null;
+            if (_rootCanvas != null && _rootCanvas.renderMode != RenderMode.ScreenSpaceOverlay)
+                cam = _rootCanvas.worldCamera;
+
+            return RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                _dragLayer, eventData.position, cam, out local);
         }
     }
 }
